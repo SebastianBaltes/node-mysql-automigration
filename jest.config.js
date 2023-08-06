@@ -1,6 +1,6 @@
 module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
+  preset: "ts-jest",
+  testEnvironment: "node",
   globalSetup: "./testSetup.js",
-  globalTeardown: "./testTeardown.js"
+  globalTeardown: "./testTeardown.js",
 };

@@ -1,7 +1,8 @@
-const util = require('util');
-const exec = util.promisify(require('child_process').exec);
+const util = require("util");
+const exec = util.promisify(require("child_process").exec);
 
-module.exports = async function() {
+module.exports = async function () {
   // Stoppen Sie den Docker-Container und entfernen Sie ihn
-  await exec('docker-compose down');
+  await exec("docker-compose down");
+  console.log("test mysql docker instance removed");
 };

@@ -1,11 +1,14 @@
 # node-mysql-automigrate
 
-`node-mysql-automigrate` is a lightweight library that enables automatic schema migration for MySQL databases based on a JSON schema specification.
+`node-mysql-automigrate` is a lightweight library that enables automatic schema migration for MySQL databases based on a
+JSON schema specification.
 
 ## Features
 
-- 🚀 **Automated Migrations**: Compares the existing database schema with the desired schema and generates SQL commands for migration.
-- 🔄 **Safe Updates**: New columns and data types can be added, existing ones can be modified, but columns will not be deleted.
+- 🚀 **Automated Migrations**: Compares the existing database schema with the desired schema and generates SQL commands
+  for migration.
+- 🔄 **Safe Updates**: New columns and data types can be added, existing ones can be modified, but columns will not be
+  deleted.
 - 🧪 **Testing**: Integrated with Docker for testing against a real MySQL instance.
 
 ## Installation
@@ -20,33 +23,35 @@ npm install node-mysql-automigrate
 
 ```json
 {
-    "tables": [
+  "tables": [
+    {
+      "name": "users",
+      "columns": [
         {
-            "name": "users",
-            "columns": [
-                {
-                    "name": "id",
-                    "type": "INT",
-                    "default": "NOT NULL AUTO_INCREMENT"
-                }
-                // ... more columns
-            ],
-            "indices": [
-                {
-                    "name": "PRIMARY",
-                    "columns": ["id"]
-                }
-            ]
+          "name": "id",
+          "type": "INT",
+          "default": "NOT NULL AUTO_INCREMENT"
         }
-        // ... more tables
-    ]
+        // ... more columns
+      ],
+      "indices": [
+        {
+          "name": "PRIMARY",
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    }
+    // ... more tables
+  ]
 }
 ```
 
 2. Use the library in your application:
 
 ```typescript
-import { automigrate } from 'node-mysql-automigrate';
+import {automigrate} from 'node-mysql-automigrate';
 
 const schemaJson = require('./path_to_your_schema.json');
 const connection = /* your mysql connection setup */;

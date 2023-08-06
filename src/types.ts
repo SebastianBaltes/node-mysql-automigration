@@ -7,7 +7,6 @@ export interface Column {
 export interface Table {
     name: string;
     columns: Column[];
-    uniqueIndices?: string[];
     indices?: Index[];
 }
 

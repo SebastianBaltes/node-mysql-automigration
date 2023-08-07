@@ -1,5 +1,5 @@
 import { readSchemaFromDb } from "../src/readSchemaFromDb";
-import { createTestConnection, closeTestConnection } from "./testHelpers";
+import { createTestConnection, closeTestConnection, clearDatabase } from "./testHelpers";
 import { Connection } from "mysql2/promise";
 import { Schema } from "../src/types";
 import { automigrate } from "../src";
@@ -9,6 +9,7 @@ describe("readSchemaFromDb", () => {
 
   beforeEach(async () => {
     connection = await createTestConnection();
+    await clearDatabase(connection);
   });
 
   afterEach(async () => {

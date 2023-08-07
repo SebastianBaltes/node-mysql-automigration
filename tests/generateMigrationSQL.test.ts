@@ -18,6 +18,10 @@ describe("generateMigrationSQL", () => {
     };
 
     const result = generateMigrationSQL(currentSchema, desiredSchema);
-    expect(result).toContain("CREATE TABLE users (id int(11), name VARCHAR(255));");
+
+    expect(result).toEqual([
+      "CREATE TABLE users (id int(11), name varchar(255));",
+      "CREATE UNIQUE INDEX primary ON users(id);",
+    ]);
   });
 });

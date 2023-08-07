@@ -1,6 +1,6 @@
 import { Schema, Table, Column, Index } from "./types";
 
-export const fullIndexName = (table: Table, index: Index) => table.name + "_" + index.name;
+export const fullIndexName = (table: Table, index: Index) => index.name;
 
 export function mapTypeAlias(alias: string): string {
   const lowercase = alias.toLowerCase();
@@ -49,28 +49,27 @@ export const generateMigrationSQL = (currentSchema: Schema, desiredSchema: Schem
   for (let [desiredTableName, desiredTable] of desiredTablesMap) {
     const currentTable = currentTablesMap.get(desiredTableName);
 
-    if (!currentTable) {
+    if (currentTable) {
+      const currentColumnsMap = new Map(currentTable.columns.map((col) => [col.name, col]));
+      for (let desiredColumn of desiredTable.columns) {
+        const currentColumn = currentColumnsMap.get(desiredColumn.name);
+        if (!currentColumn) {
+          const addColumnSQL = `ALTER TABLE ${desiredTableName} ADD ${desiredColumn.name} ${desiredColumn.type};`;
+          sqlStatements.push(addColumnSQL);
+        } else if (mapTypeAlias(currentColumn.type) !== mapTypeAlias(desiredColumn.type)) {
+          const modifyColumnSQL = `ALTER TABLE ${desiredTableName} MODIFY ${
+            desiredColumn.name
+          } ${mapTypeAlias(desiredColumn.type)};`;
+          sqlStatements.push(modifyColumnSQL);
+        }
+      }
+    } else {
       let createTableSQL = `CREATE TABLE ${desiredTableName} (`;
       let columnsSQL = desiredTable.columns
         .map((col) => `${col.name} ${mapTypeAlias(col.type)}`)
         .join(", ");
       createTableSQL += columnsSQL + ");";
       sqlStatements.push(createTableSQL);
-      continue;
-    }
-
-    const currentColumnsMap = new Map(currentTable.columns.map((col) => [col.name, col]));
-    for (let desiredColumn of desiredTable.columns) {
-      const currentColumn = currentColumnsMap.get(desiredColumn.name);
-      if (!currentColumn) {
-        const addColumnSQL = `ALTER TABLE ${desiredTableName} ADD ${desiredColumn.name} ${desiredColumn.type};`;
-        sqlStatements.push(addColumnSQL);
-      } else if (mapTypeAlias(currentColumn.type) !== mapTypeAlias(desiredColumn.type)) {
-        const modifyColumnSQL = `ALTER TABLE ${desiredTableName} MODIFY ${
-          desiredColumn.name
-        } ${mapTypeAlias(desiredColumn.type)};`;
-        sqlStatements.push(modifyColumnSQL);
-      }
     }
 
     // Index handling
@@ -78,7 +77,7 @@ export const generateMigrationSQL = (currentSchema: Schema, desiredSchema: Schem
       desiredTable.indices?.map((index) => [fullIndexName(desiredTable, index), index])
     );
     const currentIndexesMap = new Map(
-      currentTable.indices?.map((index) => [fullIndexName(currentTable, index), index])
+      currentTable?.indices?.map((index) => [fullIndexName(currentTable, index), index])
     );
 
     if (desiredTable.indices) {
@@ -93,7 +92,7 @@ export const generateMigrationSQL = (currentSchema: Schema, desiredSchema: Schem
       }
     }
 
-    if (currentTable.indices) {
+    if (currentTable?.indices) {
       for (let [currentIndexName] of currentIndexesMap) {
         if (!desiredIndicesMap.has(currentIndexName)) {
           const dropIndexSQL = `DROP INDEX ${currentIndexName} ON ${desiredTableName};`;

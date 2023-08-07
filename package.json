@@ -11,7 +11,7 @@
   },
   "scripts": {
     "start": "ts-node src/index.ts",
-    "test": "jest"
+    "test": "jest --runInBand"
   },
   "dependencies": {
     "@prettier/plugin-php": "^0.19.6",

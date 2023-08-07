@@ -58,10 +58,6 @@ export const generateMigrationSQL = (currentSchema: Schema, desiredSchema: Schem
     sqlStatements.push(dropIndexSQL);
   }
 
-  function defaultSQL(col: Column) {
-    return col.defaultValue == null ? "" : ` DEFAULT ${col.defaultValue}`;
-  }
-
   for (let [desiredTableName, desiredTable] of desiredTablesMap) {
     const currentTable = currentTablesMap.get(desiredTableName);
 

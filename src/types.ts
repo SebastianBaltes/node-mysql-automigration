@@ -1,7 +1,7 @@
 export interface Column {
   name: string;
-  type: string; // Zum Beispiel 'VARCHAR(255)', 'INT', etc.
-  defaultValue?: any; // Optionaler Standardwert für die Spalte
+  type: string; // For example 'VARCHAR(255)', 'INT', etc.
+  defaultValue?: any; // Optional default value for the column
 }
 
 export interface Table {
@@ -11,10 +11,10 @@ export interface Table {
 }
 
 export interface Index {
-  columns: string[]; // Spaltennamen, die in den Index aufgenommen werden sollen
-  unique?: boolean; // Gibt an, ob der Index eindeutig sein soll oder nicht. Standard ist false.
-  type?: string; // Zum Beispiel 'BTREE' oder 'HASH' usw. (abhängig von der spezifischen DB-Technologie)
-  name: string; // Ein required Name für den Index. Wenn nicht angegeben, kann ein Name basierend auf den Spaltennamen generiert werden.
+  columns: string[]; // Column names to be included in the index
+  unique?: boolean; // Indicates whether the index should be unique or not. Default is false.
+  type?: string; // For example 'BTREE' or 'HASH' etc. (depending on the specific DB technology)
+  name: string; // A required name for the index
 }
 
 export interface Schema {

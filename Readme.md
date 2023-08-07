@@ -1,7 +1,34 @@
 # node-mysql-automigrate
 
 `node-mysql-automigrate` is a lightweight library that enables automatic schema migration for MySQL databases based on a
-JSON schema specification.
+JSON schema specification. The scope of this library is confined to a small subset of the complete MySQL SQL schema, 
+as illustrated in the following schema definition:
+
+
+```typescript
+export interface Column {
+  name: string;
+  type: string; // For example 'VARCHAR(255)', 'INT', etc.
+  defaultValue?: any; // Optional default value for the column
+}
+
+export interface Table {
+  name: string;
+  columns: Column[];
+  indices?: Index[];
+}
+
+export interface Index {
+  columns: string[]; // Column names to be included in the index
+  unique?: boolean; // Indicates whether the index should be unique or not. Default is false.
+  type?: string; // For example 'BTREE' or 'HASH' etc. (depending on the specific DB technology)
+  name: string; // A required name for the index
+}
+
+export interface Schema {
+  tables: Table[];
+}
+```
 
 ## Features
 
@@ -58,6 +85,11 @@ const connection = /* your mysql connection setup */;
 
 await automigrate(connection, schemaJson);
 ```
+
+Automigrate compares against the actual database schema, which isn't a performance-optimized operation. 
+In a real-world application, you'd want to limit these checks — for instance, only post-deployments. 
+It might also be beneficial to store a hash of the schema.json in the database and compare it 
+with the hash of the new schema.json before invoking automigrate.
 
 ## Testing
 

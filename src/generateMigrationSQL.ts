@@ -1,6 +1,5 @@
 import { Schema, Table, Column, Index } from "./types";
-
-export const fullIndexName = (table: Table, index: Index) => index.name;
+import { isEqual } from "lodash";
 
 export function mapTypeAlias(alias: string): string {
   const lowercase = alias.toLowerCase();
@@ -46,48 +45,69 @@ export const generateMigrationSQL = (currentSchema: Schema, desiredSchema: Schem
   const currentTablesMap = new Map(currentSchema.tables.map((table) => [table.name, table]));
   const desiredTablesMap = new Map(desiredSchema.tables.map((table) => [table.name, table]));
 
+  function addIndex(index: Index, tableName: string) {
+    const indexType = index.unique ? "UNIQUE " : "";
+    const createIndexSQL = `CREATE ${indexType}INDEX ${
+      index.name
+    } ON ${tableName}(${index.columns.join(", ")});`;
+    sqlStatements.push(createIndexSQL);
+  }
+
+  function dropIndex(indexName: string, tableName: string) {
+    const dropIndexSQL = `DROP INDEX ${indexName} ON ${tableName};`;
+    sqlStatements.push(dropIndexSQL);
+  }
+
+  function defaultSQL(col: Column) {
+    return col.defaultValue == null ? "" : ` DEFAULT ${col.defaultValue}`;
+  }
+
   for (let [desiredTableName, desiredTable] of desiredTablesMap) {
     const currentTable = currentTablesMap.get(desiredTableName);
+
+    const colDefinition = (col: Column) =>
+      col.name +
+      " " +
+      mapTypeAlias(col.type) +
+      (col.defaultValue ? ` DEFAULT ${col.defaultValue}` : "");
 
     if (currentTable) {
       const currentColumnsMap = new Map(currentTable.columns.map((col) => [col.name, col]));
       for (let desiredColumn of desiredTable.columns) {
         const currentColumn = currentColumnsMap.get(desiredColumn.name);
         if (!currentColumn) {
-          const addColumnSQL = `ALTER TABLE ${desiredTableName} ADD ${desiredColumn.name} ${desiredColumn.type};`;
-          sqlStatements.push(addColumnSQL);
-        } else if (mapTypeAlias(currentColumn.type) !== mapTypeAlias(desiredColumn.type)) {
-          const modifyColumnSQL = `ALTER TABLE ${desiredTableName} MODIFY ${
-            desiredColumn.name
-          } ${mapTypeAlias(desiredColumn.type)};`;
-          sqlStatements.push(modifyColumnSQL);
+          sqlStatements.push(
+            `ALTER TABLE ${desiredTableName} ADD ${colDefinition(desiredColumn)};`
+          );
+        } else if (
+          mapTypeAlias(currentColumn.type) !== mapTypeAlias(desiredColumn.type) ||
+          currentColumn.defaultValue !== desiredColumn.defaultValue
+        ) {
+          sqlStatements.push(
+            `ALTER TABLE ${desiredTableName} MODIFY ${colDefinition(desiredColumn)};`
+          );
         }
       }
     } else {
-      let createTableSQL = `CREATE TABLE ${desiredTableName} (`;
-      let columnsSQL = desiredTable.columns
-        .map((col) => `${col.name} ${mapTypeAlias(col.type)}`)
-        .join(", ");
-      createTableSQL += columnsSQL + ");";
-      sqlStatements.push(createTableSQL);
+      sqlStatements.push(
+        `CREATE TABLE ${desiredTableName} (${desiredTable.columns.map(colDefinition).join(", ")});`
+      );
     }
 
     // Index handling
-    const desiredIndicesMap = new Map(
-      desiredTable.indices?.map((index) => [fullIndexName(desiredTable, index), index])
-    );
-    const currentIndexesMap = new Map(
-      currentTable?.indices?.map((index) => [fullIndexName(currentTable, index), index])
-    );
+    const desiredIndicesMap = new Map(desiredTable.indices?.map((index) => [index.name, index]));
+    const currentIndexesMap = new Map(currentTable?.indices?.map((index) => [index.name, index]));
 
     if (desiredTable.indices) {
       for (let [desiredIndexName, desiredIndex] of desiredIndicesMap) {
-        if (!currentIndexesMap.has(desiredIndexName)) {
-          const indexType = desiredIndex.unique ? "UNIQUE" : "";
-          const createIndexSQL = `CREATE ${indexType} INDEX ${desiredIndexName} ON ${desiredTableName}(${desiredIndex.columns.join(
-            ", "
-          )});`;
-          sqlStatements.push(createIndexSQL);
+        if (currentIndexesMap.has(desiredIndexName)) {
+          const currentIndex = currentIndexesMap.get(desiredIndexName);
+          if (!isEqual(currentIndex, desiredIndex)) {
+            dropIndex(desiredIndexName, desiredTableName);
+            addIndex(desiredIndex, desiredTableName);
+          }
+        } else {
+          addIndex(desiredIndex, desiredTableName);
         }
       }
     }
@@ -95,8 +115,7 @@ export const generateMigrationSQL = (currentSchema: Schema, desiredSchema: Schem
     if (currentTable?.indices) {
       for (let [currentIndexName] of currentIndexesMap) {
         if (!desiredIndicesMap.has(currentIndexName)) {
-          const dropIndexSQL = `DROP INDEX ${currentIndexName} ON ${desiredTableName};`;
-          sqlStatements.push(dropIndexSQL);
+          dropIndex(currentIndexName, desiredTableName);
         }
       }
     }
